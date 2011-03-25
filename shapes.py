@@ -1,18 +1,37 @@
+""" The shapes module provides ways to represent a number of two-dimensional
+geometric shapes.  Any line, polygon, or circle can be represented.  Simple
+points can be represented using vectors, so they are not considered in this
+module.
+
+The classes in this module are designed to be used with Pygame.  For this
+reason, most of the classes have a Pygame attribute that can be directly used
+to draw shapes.  In addition, the vertical axis is assumed to increase going
+down the screen.  This only matters for functions that explicitly refer to the
+"top" or the "bottom" of particular shapes.
+
+All of the shape classes are immutable and are not meant to be subclassed. """
+
 from __future__ import division
 
 from vector import *
 
-# This module uses the pygame coordinate system.
-
 class Line(object):
+    """ Represents a line in two-dimensions.  These lines don't have to be
+    symmetrical, so other shapes can be either "in front of" or "behind" them.
+    Degenerate lines can also be created, but they may trigger assertions if
+    used improperly. """
 
     # Factory Methods {{{1
     @staticmethod
     def from_points(head, tail, normal=Vector.null()):
+        """ Create a line segment between the two given points. """
         return Line(head, tail, normal)
 
     @staticmethod
     def from_direction(tail, direction, normal=Vector.null()):
+        """ Create a line segment from the given point and direction.  The
+        point is taken to be the tail of the line, although a distinction is
+        hardly ever made. """
         return Line(tail, tail + direction, normal)
     # }}}1
 
@@ -92,15 +111,19 @@ class Line(object):
     # }}}1
 
 class Circle(object):
+    """ Represents a circle with just a center and a radius. """
 
     # Factory Methods {{{1
     def shrink(self, padding):
+        """ Return a circle with a smaller radius than this one. """
         return self.grow(-padding)
 
     def grow(self, padding):
+        """ Return a circle with a larger radius than this one. """
         return Circle(self.center, self.radius + padding)
 
     def move(self, displacement):
+        """ Return a circle that is offset from this one. """
         return Circle(self.center + displacement, self.radius)
     # }}}1
 
@@ -108,11 +131,7 @@ class Circle(object):
     def __init__(self, center, radius):
         self.__center = center
         self.__radius = radius
-
-        left = center.x - radius; right = center.x + radius
-        top = center.y - radius; bottom = center.y + radius
-
-        self.__box = Rectangle(left, top, right, bottom)
+        self.__box = Rectangle.from_circle(self)
 
     def __eq__(self, other):
         return (self.center == other.center and
@@ -145,6 +164,9 @@ class Circle(object):
     # }}}1
 
 class Shape(object):
+    """ Provides useful methods for shapes with 3 or more vertices.  This is
+    supposed to be an abstract base class; it is meant to be inherited rather
+    than instantiated. """
 
     # Attributes {{{1
     @property
@@ -206,20 +228,6 @@ class Shape(object):
         return edges
 
     @staticmethod
-    def find_box(vertices, center):
-        top, left = center.get_tuple()
-        bottom, right = center.get_tuple()
-
-        for vertex in vertices:
-            top = min(top, vertex.y)
-            left = min(left, vertex.x)
-
-            bottom = max(bottom, vertex.y)
-            right = max(right, vertex.y)
-
-        return Rectangle(left, top, right, bottom)
-
-    @staticmethod
     def yield_vertices(vertices, count):
         size = len(vertices)
 
@@ -234,14 +242,20 @@ class Shape(object):
     # }}}1
 
 class Polygon(Shape):
+    """ Represents convex shapes with arbitrary numbers of vertices.  Shapes
+    with concavities are illegal because they can break the collision
+    detection algorithms. """
 
     # Factory Methods {{{1
     @staticmethod
     def from_vertices(vertices):
+        """ Create a polygon from a list of vertices.  This resulting shape
+        must must convex; an assertion will fail if it isn't. """
         return Polygon(vertices)
 
     @staticmethod
     def from_regular(center, radius, sides, angle=0):
+        """ Create a regular polygon with the given number of sides. """
         vertices = []
 
         for index in range(sides):
@@ -257,7 +271,7 @@ class Polygon(Shape):
         self.__vertices = Polygon.check_vertices(vertices)
         self.__center = Polygon.find_center(vertices)
         self.__edges = Polygon.find_edges(vertices, self.__center)
-        self.__box = Polygon.find_box(vertices, self.__center)
+        self.__box = Rectangle.from_shape(self)
 
     # Attributes {{{1
     @property
@@ -278,9 +292,17 @@ class Polygon(Shape):
     # }}}1
 
 class Hexagon(Shape):
+    """ This class is not yet implemented.  However, it will eventually
+    provide methods to facilitate the creation of regular hexagons. """
+
     pass
 
 class Rectangle(Shape):
+    """ Represents rectangular shapes.  These shapes can be constructed using
+    the Polygon class, but this class provides many useful attributes that
+    only apply to rectangular shapes.  In addition, detecting collisions
+    between rectangles is much faster that detecting collision between
+    arbitrary polygons. """
 
     # Factory Methods {{{1
     @staticmethod
@@ -318,11 +340,27 @@ class Rectangle(Shape):
 
     @staticmethod
     def from_circle(circle):
-        return circle.box
+        center = circle.center
+        radius = circle.radius
+
+        left = center.x - radius; right = center.x + radius
+        top = center.y - radius; bottom = center.y + radius
+
+        return Rectangle(left, top, right, bottom)
 
     @staticmethod
     def from_shape(shape):
-        return shape.box
+        top, left = shape.center
+        bottom, right = shape.center
+
+        for vertex in shape.vertices:
+            top = min(top, vertex.y)
+            left = min(left, vertex.x)
+
+            bottom = max(bottom, vertex.y)
+            right = max(right, vertex.y)
+
+        return Rectangle(left, top, right, bottom)
 
     def shrink(self, padding):
         return self.grow(-padding)
