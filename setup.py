@@ -6,7 +6,7 @@ arguments = dict(
         description = "2D Game Utilities",
 
         author = "Kale Kundert",
-        author_email = "kale@thekunderts.net"
+        author_email = "kale@thekunderts.net",
 
         py_modules = ("vector", "shapes", "collisions") )
 

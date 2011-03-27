@@ -98,6 +98,10 @@ class Line(object):
     def direction(self):
         return self.head - self.tail
 
+    @property
+    def pygame(self):
+        return (self.tail, self.head)
+
     def get_head(self): return self.head
     def get_tail(self): return self.tail
     def get_degenerate(self): return self.degenerate
@@ -108,6 +112,8 @@ class Line(object):
     def get_center(self): return self.center
     def get_points(self): return self.points
     def get_direction(self): return self.direction
+
+    def get_pygame(self): return self.pygame
     # }}}1
 
 class Circle(object):
@@ -153,6 +159,14 @@ class Circle(object):
     def box(self):
         return self.__box
 
+    @property
+    def dimensions(self):
+        return self.center, self.radius
+
+    @property
+    def pygame(self):
+        return self.center, self.radius
+
     def get_center(self):
         return self.center
 
@@ -161,6 +175,12 @@ class Circle(object):
 
     def get_box(self):
         return self.box
+
+    def get_dimensions(self):
+        return self.dimensions
+
+    def get_pygame(self):
+        return self.pygame
     # }}}1
 
 class Shape(object):
@@ -179,11 +199,16 @@ class Shape(object):
     @property
     def box(self): raise NotImplementedError
 
+    @property
+    def pygame(self): raise NotImplementedError
+
     def get_edges(self): return self.edges
     def get_vertices(self): return self.vertices
 
     def get_center(self): return self.center
     def get_box(self): return self.box
+
+    def get_pygame(self): return self.pygame
 
     # Setup Methods {{{1
     @staticmethod
@@ -289,6 +314,10 @@ class Polygon(Shape):
     @property
     def center(self):
         return self.__center
+
+    @property
+    def pygame(self):
+        return [vertex.pygame for vertex in self.vertices]
     # }}}1
 
 class Hexagon(Shape):
@@ -481,6 +510,11 @@ class Rectangle(Shape):
     def box(self):
         return self
 
+    @property
+    def pygame(self):
+        import pygame
+        return pygame.Rect(self.left, self.top, self.width, self.height)
+
     def get_top(self): return self.top
     def get_bottom(self): return self.bottom
     def get_left(self): return self.left
@@ -506,6 +540,9 @@ class Rectangle(Shape):
     # }}}1
 
 if __name__ == "__main__":
+    import pygame
+    from pygame.locals import *
+
     from pprint import *
 
     # Line Tests {{{1
@@ -520,13 +557,16 @@ if __name__ == "__main__":
 
         assert line.get_head() == head
         assert line.get_tail() == tail
-        assert line.get_normal() == normal
-
-        assert line.get_center() == Vector(5, 0)
         assert line.get_degenerate() == False
 
+        assert line.get_facing() == normal
+        assert line.get_normal() in (normal, -normal)
+
+        assert line.get_center() == Vector(5, 0)
         assert line.get_points() == (head, tail)
         assert line.get_direction() == Vector(10, 0)
+
+        assert line.get_pygame() == (tail, head)
 
         same_line = Line.from_direction(tail, direction, normal)
         opposite_line = Line.from_points(head, tail, opposite)
@@ -547,6 +587,9 @@ if __name__ == "__main__":
 
         assert circle.get_center() == center
         assert circle.get_radius() == radius
+
+        assert circle.get_dimensions() == (center, radius)
+        assert circle.get_pygame() == (center, radius)
 
         grown_circle = Circle(center, radius - 1).grow(1)
         shrunk_circle = Circle(center, radius + 1).shrink(1)
@@ -592,6 +635,7 @@ if __name__ == "__main__":
             assert edge in polygon.edges
         for vertex in vertices:
             assert vertex in polygon.vertices
+            assert vertex.pygame in polygon.pygame
 
     # Rectangle Tests {{{1
     def rectangle_tests():
@@ -614,6 +658,7 @@ if __name__ == "__main__":
 
         assert golden.size == (width, height)
         assert golden.dimensions == (top, left, width, height)
+        assert golden.pygame == Rect(left, top, width, height)
 
         assert golden.center == center
         assert golden.box == golden
