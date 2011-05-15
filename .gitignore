@@ -1,4 +1,6 @@
 build
+htmlcov
+.coverage
 *.pyc
 *.swp
 

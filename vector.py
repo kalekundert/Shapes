@@ -20,10 +20,10 @@ class Vector(object):
         return Vector(0, 0)
 
     @staticmethod
-    def random():
+    def random(magnitude=1):
         """ Create a unit vector pointing in a random direction. """
         theta = random.uniform(0, 2 * math.pi)
-        return Vector(math.cos(theta), math.sin(theta))
+        return magnitude * Vector(math.cos(theta), math.sin(theta))
 
     @staticmethod
     def from_radians(angle):
@@ -135,6 +135,11 @@ class Vector(object):
     def __floordiv__(self, c):
         """ Return the integer quotient of this vector and the argument. """
         return Vector(self.x // c, self.y // c)
+
+    def __mod__(self, c):
+        """ Return the remainder after dividing this vector by the argument.
+        This should work with integer and floating point input. """
+        return Vector(self.x % c, self.y % c)
 
     def __eq__(self, other):
         """ Return true if this vector is exactly the same as the argument.
