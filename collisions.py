@@ -1,7 +1,7 @@
 from __future__ import division
 
-import math
-import shapes
+import math, shapes
+from vector import Vector
 
 class Collisions:
 
@@ -250,7 +250,6 @@ class Collisions:
     # }}}1
 
 if __name__ == "__main__":
-    from vector import *
     from shapes import *
 
     # Points and Lines {{{1
